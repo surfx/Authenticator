@@ -2,7 +2,7 @@
   <div>
     <a-file-input
       button-type="file"
-      accept="application/json, text/plain, text/csv, .csv, .json, .txt"
+      accept="application/json, text/plain"
       v-if="!getFilePassphrase"
       @change="importFile($event, true)"
       :label="i18n.import_backup_file"
@@ -25,8 +25,6 @@ import Vue from "vue";
 import {
   decryptBackupData,
   getEntryDataFromOTPAuthPerLine,
-  getEntryDataFromCsv,
-  looksLikeOtpauth,
 } from "../../importHelpers";
 import { EntryStorage } from "../../models/storage";
 import { Encryption } from "../../models/encryption";
@@ -68,10 +66,9 @@ export default Vue.extend({
             ).length;
           } catch (e) {
             console.warn(e);
-            const text = reader.result as string;
-            const result = looksLikeOtpauth(text)
-              ? await getEntryDataFromOTPAuthPerLine(text)
-              : await getEntryDataFromCsv(text, this.getEncryption());
+            const result = await getEntryDataFromOTPAuthPerLine(
+              reader.result as string
+            );
             importData = result.exportData;
             failedCount = result.failedCount;
             succeededCount = result.succeededCount;
@@ -126,7 +123,10 @@ export default Vue.extend({
             }
           }
           if (Object.keys(decryptedFileData).length) {
-            await EntryStorage.import(this.getEncryption(), decryptedFileData);
+            await EntryStorage.import(
+              this.$encryption as Encryption,
+              decryptedFileData
+            );
             if (failedCount === 0) {
               alert(this.i18n.updateSuccess);
             } else if (succeededCount) {
@@ -152,13 +152,6 @@ export default Vue.extend({
         }
       }
       return;
-    },
-    getEncryption(): Encryption {
-      // No popup não existe $encryption global (só na página de importação)
-      const defaultKey = this.$store?.state.accounts.defaultEncryption;
-      return (this.$encryption ||
-        this.$store?.state.accounts.encryption[defaultKey] ||
-        new Encryption("", "")) as Encryption;
     },
     async getOldPassphrase() {
       this.getFilePassphrase = true;

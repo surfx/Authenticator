@@ -11,15 +11,12 @@
         <p v-bind:title="i18n.advisor" v-on:click="showInfo('AdvisorPage')">
           <span><IconAdvisor /></span>{{ i18n.advisor }}
         </p>
-        <a
-          href="permissions.html"
-          target="_blank"
-          style="text-decoration: none"
+        <p
+          v-bind:title="i18n.permissions"
+          v-on:click="showInfo('PermissionsPage')"
         >
-          <p v-bind:title="i18n.permissions">
-            <span><IconClipboardCheck /></span>{{ i18n.permissions }}
-          </p>
-        </a>
+          <span><IconClipboardCheck /></span>{{ i18n.permissions }}
+        </p>
       </div>
       <div class="menuList">
         <a href="manager.html" target="_blank" style="text-decoration: none">
@@ -50,28 +47,6 @@
           <span><IconWrench /></span>{{ i18n.resize_popup_page }}
         </p>
       </div>
-      <div class="menuList">
-        <p v-bind:title="i18n.feedback" v-on:click="openHelp()">
-          <span><IconComments /></span>{{ i18n.feedback }}
-        </p>
-        <p
-          v-bind:title="i18n.translate"
-          v-on:click="openLink('https://otp.ee/translate')"
-        >
-          <span><IconGlobe /></span>{{ i18n.translate }}
-        </p>
-        <p
-          v-bind:title="i18n.source"
-          v-on:click="openLink('https://otp.ee/sourcecode')"
-        >
-          <span><IconCode /></span>{{ i18n.source }}
-        </p>
-        <a href="licenses.html" target="_blank" style="text-decoration: none">
-          <p v-bind:title="i18n.about">
-            <span><IconInfo /></span>{{ i18n.about }}
-          </p>
-        </a>
-      </div>
       <div id="version">Version {{ version }}</div>
     </div>
   </div>
@@ -81,16 +56,12 @@ import Vue from "vue";
 import { syncTimeWithGoogle } from "../../syncTime";
 
 import IconArrowLeft from "../../../svg/arrow-left.svg";
-import IconInfo from "../../../svg/info.svg";
 import IconExchange from "../../../svg/exchange.svg";
 import IconDatabase from "../../../svg/database.svg";
 import IconLock from "../../../svg/lock.svg";
 import IconSync from "../../../svg/sync.svg";
 import IconWrench from "../../../svg/wrench.svg";
 import IconAdvisor from "../../../svg/lightbulb.svg";
-import IconComments from "../../../svg/comments.svg";
-import IconGlobe from "../../../svg/globe.svg";
-import IconCode from "../../../svg/code.svg";
 import IconClipboardCheck from "../../../svg/clipboard-check.svg";
 import { isFirefox, isSafari } from "../../browser";
 import { UserSettings } from "../../models/settings";
@@ -98,16 +69,12 @@ import { UserSettings } from "../../models/settings";
 export default Vue.extend({
   components: {
     IconArrowLeft,
-    IconInfo,
     IconExchange,
     IconDatabase,
     IconLock,
     IconSync,
     IconWrench,
     IconAdvisor,
-    IconComments,
-    IconGlobe,
-    IconCode,
     IconClipboardCheck,
   },
   computed: {
@@ -123,26 +90,6 @@ export default Vue.extend({
   methods: {
     hideMenu() {
       this.$store.commit("style/hideMenu");
-    },
-    openHelp() {
-      let url = "https://otp.ee/chromeissues";
-
-      if (navigator.userAgent.indexOf("Firefox") !== -1) {
-        url = "https://otp.ee/firefoxissues";
-      } else if (navigator.userAgent.indexOf("Edg") !== -1) {
-        url = "https://otp.ee/edgeissues";
-      }
-
-      const feedbackURL = this.$store.state.menu.feedbackURL;
-      if (typeof feedbackURL === "string" && feedbackURL) {
-        url = feedbackURL;
-      }
-
-      chrome.tabs.create({ url });
-    },
-    openLink(url: string) {
-      window.open(url, "_blank");
-      return;
     },
     showInfo(tab: string) {
       if (this.$store.getters["accounts/currentlyEncrypted"]) {

@@ -1,9 +1,5 @@
-import { EntryStorage } from "./models/storage";
-import { Encryption } from "./models/encryption";
 import { getOTPAuthPerLineFromOPTAuthMigration } from "./models/migration";
 import * as CryptoJS from "crypto-js";
-import { parseAccounts } from "./models/csv";
-import { OTPAlgorithm, OTPType } from "./models/otp";
 
 export async function decryptBackupData(
   backupData: { [hash: string]: OTPStorage | Key },
@@ -271,60 +267,4 @@ export async function getEntryDataFromOTPAuthPerLine(importCode: string) {
   }
 
   return { exportData, failedCount, succeededCount };
-}
-
-export async function getEntryDataFromCsv(
-  text: string,
-  encryption?: Encryption
-) {
-  const exportData: { [hash: string]: RawOTPStorage } = {};
-  const accounts = parseAccounts(text);
-
-  // Reuse hash/index of already stored accounts (same issuer + account),
-  // so re-importing an export updates them instead of duplicating.
-  const existing = new Map<string, { hash: string; index: number }>();
-  const entries = await EntryStorage.get();
-  for (const entry of entries) {
-    if (encryption?.getEncryptionStatus()) {
-      await entry.applyEncryption(encryption);
-    }
-    if (entry.issuer || entry.account) {
-      existing.set(`${entry.issuer}\u0000${entry.account}`, {
-        hash: entry.hash,
-        index: entry.index,
-      });
-    }
-  }
-
-  const offset = entries.length;
-  accounts.forEach((a, i) => {
-    const match = existing.get(`${a.issuer}\u0000${a.account}`);
-    const hash = match ? match.hash : crypto.randomUUID();
-    exportData[hash] = {
-      account: a.account,
-      hash,
-      issuer: a.issuer,
-      secret: a.secret.replace(/\s+/g, ""),
-      type: String(OTPType[a.type as keyof typeof OTPType] || OTPType.totp),
-      encrypted: false,
-      index: match ? match.index : offset + i,
-      counter: a.counter,
-      period: a.period,
-      digits: a.digits,
-      algorithm: String(
-        OTPAlgorithm[a.algorithm as keyof typeof OTPAlgorithm] ||
-          OTPAlgorithm.SHA1
-      ),
-      pinned: false,
-    };
-  });
-  return {
-    exportData,
-    failedCount: 0,
-    succeededCount: Object.keys(exportData).length,
-  };
-}
-
-export function looksLikeOtpauth(text: string) {
-  return /otpauth(-migration)?:/i.test(text);
 }

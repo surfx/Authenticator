@@ -41,6 +41,35 @@ function setStatus(message: string, kind: "ok" | "error" | "" = "") {
 function markDirty(value = true) {
   dirty = value;
   $("dirty").style.display = value ? "inline" : "none";
+  $<HTMLButtonElement>("save").disabled = !value;
+}
+
+function applyFilter() {
+  const term = $<HTMLInputElement>("search").value.trim().toLowerCase();
+  let visible = 0;
+  Array.from($("rows").children).forEach((tr, i) => {
+    const row = rows[i];
+    const match =
+      !term || `${row.issuer} ${row.account}`.toLowerCase().includes(term);
+    tr.classList.toggle("hidden", !match);
+    if (match) {
+      visible++;
+    }
+  });
+  $("count").textContent = term
+    ? `${visible} de ${rows.length}`
+    : String(rows.length);
+  $("no-match").style.display =
+    term && !visible && rows.length ? "block" : "none";
+}
+
+function toggleSecrets() {
+  showSecrets = !showSecrets;
+  setEye($("toggle-all-eye"), showSecrets);
+  $("toggle-all-eye").title = showSecrets
+    ? "Ocultar todos os segredos"
+    : "Mostrar todos os segredos";
+  render();
 }
 
 function normalizeSecret(secret: string, type: string) {
@@ -108,19 +137,32 @@ function render() {
   rows.forEach((row, index) => {
     const tr = document.createElement("tr");
     tr.dataset.index = String(index);
+    const isCounter = row.type === "hotp" || row.type === "hhex";
     tr.innerHTML = `
       <td class="num">${index + 1}</td>
-      <td><input data-f="issuer" placeholder="Sistema / emissor" /></td>
-      <td><input data-f="account" placeholder="Usuário / CPF" /></td>
-      <td class="secret-cell"><div class="secret-wrap"><input data-f="secret" class="secret" placeholder="Segredo (base32)" autocomplete="off" spellcheck="false" /><button type="button" data-action="eye" class="eye" title="Mostrar segredo">${EYE_ON}</button></div></td>
-      <td><select data-f="type">${option(TYPES, row.type)}</select></td>
-      <td><input data-f="period" type="number" min="1" class="small" /></td>
-      <td><input data-f="digits" type="number" min="1" max="10" class="small" /></td>
-      <td><select data-f="algorithm">${option(
+      <td><input data-f="issuer" placeholder="Sistema / emissor" aria-label="Emissor" /></td>
+      <td><input data-f="account" placeholder="Usuário / CPF" aria-label="Conta" /></td>
+      <td class="secret-cell"><div class="secret-wrap"><input data-f="secret" class="secret" placeholder="Segredo (base32)" aria-label="Segredo" autocomplete="off" spellcheck="false" /><button type="button" data-action="eye" class="eye" title="Mostrar segredo" aria-label="Mostrar ou ocultar segredo">${EYE_ON}</button></div></td>
+      <td><select data-f="type" aria-label="Tipo">${option(
+        TYPES,
+        row.type
+      )}</select></td>
+      <td><input data-f="period" type="number" min="1" class="small" aria-label="Período" ${
+        isCounter ? "disabled" : ""
+      } /></td>
+      <td><input data-f="counter" type="number" min="0" class="small" aria-label="Contador" ${
+        isCounter ? "" : "disabled"
+      } /></td>
+      <td><input data-f="digits" type="number" min="1" max="10" class="small" aria-label="Dígitos" /></td>
+      <td><select data-f="algorithm" aria-label="Algoritmo">${option(
         ALGORITHMS,
         row.algorithm
       )}</select></td>
-      <td><button data-action="up" title="Subir">↑</button><button data-action="down" title="Descer">↓</button><button data-action="del" class="danger" title="Remover">✕</button></td>`;
+      <td class="actions"><button type="button" data-action="up" title="Subir" aria-label="Subir" ${
+        index === 0 ? "disabled" : ""
+      }>↑</button><button type="button" data-action="down" title="Descer" aria-label="Descer" ${
+      index === rows.length - 1 ? "disabled" : ""
+    }>↓</button><button type="button" data-action="del" class="danger" title="Remover linha" aria-label="Remover linha">✕</button></td>`;
     for (const input of Array.from(tr.querySelectorAll("input"))) {
       const field = input.dataset.f as keyof Row;
       input.value = String(row[field] ?? "");
@@ -134,9 +176,9 @@ function render() {
     }
     body.appendChild(tr);
   });
-  $("count").textContent = String(rows.length);
   $("empty").style.display = rows.length ? "none" : "block";
   validateAll();
+  applyFilter();
 }
 
 function validateAll() {
@@ -145,6 +187,9 @@ function validateAll() {
   rows.forEach((row, index) => {
     const ok = isRowValid(row, index);
     trs[index]?.classList.toggle("invalid", !ok);
+    if (trs[index]) {
+      trs[index].title = ok ? "" : "Segredo ausente ou inválido";
+    }
     if (!ok) {
       invalid++;
     }
@@ -270,14 +315,17 @@ function bindEvents() {
     const row = (rows[Number(tr.dataset.index)] as unknown) as {
       [k: string]: string | number | boolean;
     };
-    const numeric = field === "period" || field === "digits";
+    const numeric =
+      field === "period" || field === "digits" || field === "counter";
     row[field] = numeric ? Number(target.value) || 0 : target.value;
     if (field === "secret" || field === "type") {
       row.secret = normalizeSecret(String(row.secret), String(row.type));
     }
     markDirty();
     const index = Number(tr.dataset.index);
-    tr.classList.toggle("invalid", !isRowValid(rows[index], index));
+    const valid = isRowValid(rows[index], index);
+    tr.classList.toggle("invalid", !valid);
+    tr.title = valid ? "" : "Segredo ausente ou inválido";
   });
 
   $("rows").addEventListener("change", (e) => {
@@ -329,6 +377,7 @@ function bindEvents() {
         counter: 0,
       })
     );
+    $<HTMLInputElement>("search").value = "";
     markDirty();
     render();
     const inputs = $("rows").querySelectorAll("tr:last-child input");
@@ -340,21 +389,9 @@ function bindEvents() {
   $("save").addEventListener("click", () => save());
   $("export").addEventListener("click", exportCsv);
 
-  $("toggle-secrets").addEventListener("click", () => {
-    showSecrets = !showSecrets;
-    $("toggle-secrets").textContent = showSecrets
-      ? "Ocultar segredos"
-      : "Mostrar segredos";
-    setEye($("toggle-all-eye"), showSecrets);
-    $("toggle-all-eye").title = showSecrets
-      ? "Ocultar todos os segredos"
-      : "Mostrar todos os segredos";
-    render();
-  });
   setEye($("toggle-all-eye"), showSecrets);
-  $("toggle-all-eye").addEventListener("click", () =>
-    $("toggle-secrets").click()
-  );
+  $("toggle-all-eye").addEventListener("click", toggleSecrets);
+  $("search").addEventListener("input", applyFilter);
 
   const pasteBox = $<HTMLTextAreaElement>("paste");
   const applyPaste = (replace: boolean) => {
@@ -457,6 +494,7 @@ async function init() {
   }
 
   bindEvents();
+  markDirty(false);
   render();
 
   // Limpeza automática de duplicadas ao abrir

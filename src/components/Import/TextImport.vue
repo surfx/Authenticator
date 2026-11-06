@@ -31,8 +31,6 @@ import Vue from "vue";
 import {
   decryptBackupData,
   getEntryDataFromOTPAuthPerLine,
-  getEntryDataFromCsv,
-  looksLikeOtpauth,
 } from "../../importHelpers";
 import { EntryStorage } from "../../models/storage";
 import { Encryption } from "../../models/encryption";
@@ -59,12 +57,7 @@ export default Vue.extend({
       } catch (error) {
         console.warn(error);
         // Maybe one-otpauth-per line text
-        const result = looksLikeOtpauth(this.importCode)
-          ? await getEntryDataFromOTPAuthPerLine(this.importCode)
-          : await getEntryDataFromCsv(
-              this.importCode,
-              this.$encryption as Encryption
-            );
+        const result = await getEntryDataFromOTPAuthPerLine(this.importCode);
         exportData = result.exportData;
         failedCount = result.failedCount;
         succeededCount = result.succeededCount;

@@ -1,7 +1,6 @@
 <template>
-  <div id="permissions" class="theme-normal">
-    <h1>Permissions</h1>
-    <div>
+  <div class="permissions-page">
+    <div class="show-all">
       <input
         type="checkbox"
         id="showRequiredPermission"
@@ -11,25 +10,30 @@
         i18n.permission_show_required_permissions
       }}</label>
     </div>
-    <div v-for="permission in permissions" :key="permission.id">
-      <h2>{{ permission.id }}</h2>
+    <div
+      class="permission"
+      v-for="permission in permissions"
+      :key="permission.id"
+    >
+      <h3>{{ permission.id }}</h3>
       <p>{{ permission.description }}</p>
       <p v-if="!permission.revocable">{{ i18n.permission_required }}</p>
-      <button
-        :disabled="!permission.revocable"
-        v-if="permission.revocable"
-        v-on:click="revoke(permission.id)"
-      >
+      <a-button v-if="permission.revocable" @click="revoke(permission.id)">
         {{ i18n.permission_revoke }}
-      </button>
+      </a-button>
     </div>
   </div>
 </template>
 <script lang="ts">
 import Vue from "vue";
-import { Permission } from "../models/permission";
+import { Permission } from "../../models/permission";
 
 export default Vue.extend({
+  data: function () {
+    return {
+      showAllPermissions: false,
+    };
+  },
   computed: {
     permissions: function () {
       return this.$store.state.permissions.permissions.filter(
@@ -38,11 +42,6 @@ export default Vue.extend({
         }
       );
     },
-  },
-  data: function () {
-    return {
-      showAllPermissions: false,
-    };
   },
   methods: {
     revoke(permissionId: string) {

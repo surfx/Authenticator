@@ -13,31 +13,37 @@
             <h1>Gerenciar contas <small><span id="count">0</span> conta(s)</small>
                 <span id="dirty" style="display:none">● alterações não salvas</span></h1>
             <div class="toolbar">
-                <button id="add">+ Adicionar linha</button>
-                <button id="import">Importar CSV…</button>
-                <button id="export">Exportar CSV</button>
-                <button id="dedupe">Remover duplicadas</button>
-                <button id="toggle-secrets">Mostrar segredos</button>
-                <button id="save" class="primary">Salvar (Ctrl+S)</button>
+                <input type="search" id="search" placeholder="Buscar por emissor ou conta…" aria-label="Buscar contas" />
+                <span class="group">
+                    <button id="add" title="Adicionar uma linha em branco">+ Adicionar</button>
+                    <button id="dedupe" title="Remove linhas com mesmo emissor, conta e segredo">Remover duplicadas</button>
+                </span>
+                <span class="group">
+                    <button id="import" title="Importar contas de um arquivo CSV">Importar CSV</button>
+                    <button id="export" title="Baixar todas as contas em CSV">Exportar CSV</button>
+                </span>
+                <button id="save" class="primary" title="Ctrl+S" disabled>Salvar</button>
             </div>
         </header>
         <div id="warn" class="warn" style="display:none"></div>
-        <div id="status"></div>
+        <div id="status" role="status" aria-live="polite"></div>
         <input type="file" id="file" accept=".csv,.txt,text/csv,text/plain" style="display:none" />
 
         <table>
             <thead>
                 <tr>
                     <th>#</th><th>Sistema / emissor</th><th>Usuário / conta</th><th>Segredo <button type="button" id="toggle-all-eye" class="eye-head" title="Mostrar todos os segredos"></button></th>
-                    <th>Tipo</th><th>Período</th><th>Dígitos</th><th>Algoritmo</th><th></th>
+                    <th>Tipo</th><th>Período</th><th>Contador</th><th>Dígitos</th><th>Algoritmo</th><th></th>
                 </tr>
             </thead>
             <tbody id="rows"></tbody>
         </table>
         <p id="empty">Nenhuma conta. Adicione uma linha ou cole/importe um CSV abaixo.</p>
+        <p id="no-match" style="display:none">Nenhuma conta encontrada para a busca.</p>
 
-        <section>
-            <h2>Colar vários de uma vez</h2>
+        <details>
+            <summary>Colar várias contas de uma vez</summary>
+            <section>
             <p>Uma conta por linha, separada por <code>;</code> &mdash; colunas:
                 <code>emissor;conta;segredo</code> (opcionais: <code>tipo;período;dígitos;algoritmo;contador</code>).
                 Com ou sem linha de cabeçalho. Linhas <code>otpauth://</code> antigas também são aceitas.</p>
@@ -47,7 +53,8 @@
                 <button id="paste-append" class="primary">Adicionar à lista</button>
                 <button id="paste-replace">Substituir lista</button>
             </div>
-        </section>
+            </section>
+        </details>
     </main>
     <script src="../dist/manager.js"></script>
 </body>

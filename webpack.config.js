@@ -14,7 +14,6 @@ module.exports = {
     manager: "./src/manager.ts",
     options: "./src/options.ts",
     qrdebug: "./src/qrdebug.ts",
-    permissions: "./src/permissions.ts",
   },
   module: {
     noParse: /\.wasm$/,

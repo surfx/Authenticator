@@ -16,6 +16,7 @@ import { CurrentView } from "./store/CurrentView";
 import { Menu } from "./store/Menu";
 import { Notification } from "./store/Notification";
 import { Qr } from "./store/Qr";
+import { Permissions } from "./store/Permissions";
 import { Advisor } from "./store/Advisor";
 import { Dropbox, Drive, OneDrive } from "./models/backup";
 import { syncTimeWithGoogle } from "./syncTime";
@@ -55,6 +56,7 @@ async function init() {
       currentView: new CurrentView().getModule(),
       menu: await new Menu().getModule(),
       notification: new Notification().getModule(),
+      permissions: await new Permissions().getModule(),
       qr: new Qr().getModule(),
       style: new Style().getModule(),
     },
