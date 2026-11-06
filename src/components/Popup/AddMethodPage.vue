@@ -22,6 +22,15 @@ export default Vue.extend({
         this.$store.commit("notification/alert", this.i18n.phrase_incorrect);
         return;
       }
+      // O popup fecha ao perder o foco; a inserção manual abre em uma aba
+      const query = new URLSearchParams(document.location.search.substring(1));
+      if (page === "AddAccountPage" && !query.get("manual")) {
+        chrome.tabs.create({
+          url: chrome.runtime.getURL("view/popup.html?manual=true"),
+        });
+        window.close();
+        return;
+      }
       this.$store.commit("style/showInfo");
       this.$store.commit("currentView/changeView", page);
     },

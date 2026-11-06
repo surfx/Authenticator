@@ -88,6 +88,15 @@ async function init() {
     instance.$store.commit("accounts/initComplete");
   }
 
+  // Abre direto a tela de inserção manual quando aberto em uma aba
+  if (
+    new URLSearchParams(document.location.search.substring(1)).get("manual") &&
+    !instance.$store.getters["accounts/currentlyEncrypted"]
+  ) {
+    instance.$store.commit("style/showInfo");
+    instance.$store.commit("currentView/changeView", "AddAccountPage");
+  }
+
   // Auto focus on first entry
   document.querySelector<HTMLAnchorElement>("a.entry[tabindex='0']")?.focus();
 

@@ -14,30 +14,17 @@
       <div class="text warning" v-if="currentlyEncrypted">
         {{ i18n.phrase_incorrect_export }}
       </div>
-      <a-button-link
-        download="authenticator.txt"
-        :href="exportOneLineOtpAuthFile"
-        v-if="!unsupportedAccounts && isDataLinkSupported"
-        >{{ i18n.download_backup }}</a-button-link
-      >
-      <button
-        v-on:click="downloadBackUpOneLineOtpAuthFile()"
-        v-if="!unsupportedAccounts && !isDataLinkSupported"
-        class="button"
-      >
-        {{ i18n.download_backup }}
-      </button>
-      <a-button-link
-        download="authenticator.json"
-        :href="exportFile"
-        v-if="unsupportedAccounts && isDataLinkSupported"
-        >{{ i18n.download_backup }}</a-button-link
-      >
-      <button
-        v-on:click="downloadBackUpExportFile()"
-        v-if="unsupportedAccounts && !isDataLinkSupported"
-        class="button"
-      >
+      <div class="text">
+        <label for="exportFormat">Formato:</label>
+        <select id="exportFormat" v-model="exportFormat">
+          <option value="csv">CSV (.csv)</option>
+          <option value="txt" v-if="!unsupportedAccounts">
+            otpauth (.txt)
+          </option>
+          <option value="json">JSON (.json)</option>
+        </select>
+      </div>
+      <button v-on:click="downloadBackup()" class="button">
         {{ i18n.download_backup }}
       </button>
       <a-button-link
@@ -54,7 +41,7 @@
         {{ i18n.download_enc_backup }}
       </button>
     </div>
-    <a-button-link href="import.html">{{ i18n.import_backup }}</a-button-link>
+    <FileImport />
     <br />
     <!-- 3rd Party Backup Services -->
     <div v-show="!backupDisabled && isBackupServiceSupported">
@@ -71,18 +58,20 @@
 <script lang="ts">
 import Vue from "vue";
 import { isSafari } from "../../browser";
+import { accountsToCsv } from "../../models/csv";
+import FileImport from "../Import/FileImport.vue";
 
 export default Vue.extend({
+  components: { FileImport },
   data: function () {
     const exportData = this.$store.state.accounts.exportData;
     const exportEncData = this.$store.state.accounts.exportEncData;
     const key = this.$store.state.accounts.key;
 
     return {
+      exportFormat: "csv",
       unsupportedAccounts: hasUnsupportedAccounts(exportData),
-      exportFile: getBackupFile(exportData),
       exportEncryptedFile: getBackupFile(exportEncData, key),
-      exportOneLineOtpAuthFile: getOneLineOtpBackupFile(exportData),
     };
   },
   computed: {
@@ -154,15 +143,26 @@ export default Vue.extend({
         return;
       }
     },
-    downloadBackUpOneLineOtpAuthFile() {
+    downloadBackup() {
       const exportData = this.$store.state.accounts.exportData;
-      const t = getOneLineOtpBackupFile(exportData);
-      window.open(t);
-    },
-    downloadBackUpExportFile() {
-      const exportData = this.$store.state.accounts.exportData;
-      const t = getBackupFile(exportData);
-      window.open(t);
+      let url: string;
+      if (this.exportFormat === "txt") {
+        url = getOneLineOtpBackupFile(exportData);
+      } else if (this.exportFormat === "json") {
+        url = getBackupFile(exportData);
+      } else {
+        url = getCsvBackupFile(exportData);
+      }
+      if (isSafari) {
+        window.open(url);
+        return;
+      }
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `authenticator.${this.exportFormat}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
     },
     downloadBackUpExportEncryptedFile() {
       const exportEncData = this.$store.state.accounts.exportEncData;
@@ -198,10 +198,30 @@ function getBackupFile(
   return downloadFileUrlBuilder(json);
 }
 
+function getCsvBackupFile(entryData: { [hash: string]: RawOTPStorage }) {
+  const accounts = Object.keys(entryData)
+    .map((hash) => entryData[hash])
+    .sort((a, b) => a.index - b.index)
+    .map((e) => ({
+      issuer: e.issuer || "",
+      account: e.account || "",
+      secret: e.secret,
+      type: e.type,
+      period: e.period || 30,
+      digits: e.digits || 6,
+      algorithm: e.algorithm || "SHA1",
+      counter: e.counter || 0,
+    }));
+  const blob = new Blob([accountsToCsv(accounts)], {
+    type: "text/csv;charset=utf-8",
+  });
+  return URL.createObjectURL(blob);
+}
+
 function getOneLineOtpBackupFile(entryData: { [hash: string]: RawOTPStorage }) {
   const otpAuthLines: string[] = [];
   for (const hash of Object.keys(entryData)) {
-    const otpStorage = entryData[hash];
+    const otpStorage = { ...entryData[hash] };
     if (otpStorage.issuer) {
       otpStorage.issuer = removeUnsafeData(otpStorage.issuer);
     }

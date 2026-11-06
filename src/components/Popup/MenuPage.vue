@@ -22,6 +22,11 @@
         </a>
       </div>
       <div class="menuList">
+        <a href="manager.html" target="_blank" style="text-decoration: none">
+          <p v-bind:title="i18n.manage_accounts">
+            <span><IconWrench /></span>{{ i18n.manage_accounts }}
+          </p>
+        </a>
         <p v-bind:title="i18n.backup" v-on:click="showInfo('BackupPage')">
           <span><IconExchange /></span>{{ i18n.backup }}
         </p>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Authenticator - Gerenciar contas</title>
+    <link rel="stylesheet" href="../css/manager.css" type="text/css" charset="utf-8">
+</head>
+
+<body>
+    <main>
+        <header>
+            <h1>Gerenciar contas <small><span id="count">0</span> conta(s)</small>
+                <span id="dirty" style="display:none">● alterações não salvas</span></h1>
+            <div class="toolbar">
+                <button id="add">+ Adicionar linha</button>
+                <button id="import">Importar CSV…</button>
+                <button id="export">Exportar CSV</button>
+                <button id="dedupe">Remover duplicadas</button>
+                <button id="toggle-secrets">Mostrar segredos</button>
+                <button id="save" class="primary">Salvar (Ctrl+S)</button>
+            </div>
+        </header>
+        <div id="warn" class="warn" style="display:none"></div>
+        <div id="status"></div>
+        <input type="file" id="file" accept=".csv,.txt,text/csv,text/plain" style="display:none" />
+
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th><th>Sistema / emissor</th><th>Usuário / conta</th><th>Segredo <button type="button" id="toggle-all-eye" class="eye-head" title="Mostrar todos os segredos"></button></th>
+                    <th>Tipo</th><th>Período</th><th>Dígitos</th><th>Algoritmo</th><th></th>
+                </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+        </table>
+        <p id="empty">Nenhuma conta. Adicione uma linha ou cole/importe um CSV abaixo.</p>
+
+        <section>
+            <h2>Colar vários de uma vez</h2>
+            <p>Uma conta por linha, separada por <code>;</code> &mdash; colunas:
+                <code>emissor;conta;segredo</code> (opcionais: <code>tipo;período;dígitos;algoritmo;contador</code>).
+                Com ou sem linha de cabeçalho. Linhas <code>otpauth://</code> antigas também são aceitas.</p>
+            <textarea id="paste" rows="7" spellcheck="false"
+                placeholder="Sistema A;12345678900;JBSWY3DPEHPK3PXP&#10;Sistema B;98765432100;KRSXG5CTMVRXEZLU"></textarea>
+            <div class="toolbar">
+                <button id="paste-append" class="primary">Adicionar à lista</button>
+                <button id="paste-replace">Substituir lista</button>
+            </div>
+        </section>
+    </main>
+    <script src="../dist/manager.js"></script>
+</body>
+
+</html>

@@ -17,7 +17,7 @@ import Vue from "vue";
 // @ts-ignore
 import QRCode from "qrcode-reader";
 import jsQR from "jsqr";
-import { getEntryDataFromOTPAuthPerLine } from "../../import";
+import { getEntryDataFromOTPAuthPerLine } from "../../importHelpers";
 import { EntryStorage } from "../../models/storage";
 import { Encryption } from "../../models/encryption";
 

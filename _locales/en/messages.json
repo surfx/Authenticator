@@ -217,6 +217,10 @@
     "message": "Download Backup File",
     "description": "Download backup file."
   },
+  "manage_accounts": {
+    "message": "Manage accounts (full page / CSV)",
+    "description": "Open the full page account manager."
+  },
   "import_backup": {
     "message": "Import Backup",
     "description": "Import backup."
