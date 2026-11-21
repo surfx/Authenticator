@@ -6,12 +6,17 @@
 # Platforms:
 #   'chrome', 'firefox', 'edge', 'test', or 'prod'
 
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
+
 PLATFORM=$1
 REMOTE=$(git config --get remote.origin.url)
 CREDS=$(cat ./src/models/credentials.ts | tr -d '\n')
 CREDREGEX='^.*".+".*".+".*".+".*".+".*".+".*$'
 STYLEFILES="./src/* ./src/**/* ./src/**/**/* ./src/**/**/**/* ./sass/*.scss"
-set -e
 
 if [[ $PLATFORM != "chrome" ]] && [[ $PLATFORM != "firefox" ]] && [[ $PLATFORM != "edge" ]] && [[ $PLATFORM != "prod" ]] && [[ $PLATFORM != "test" ]]; then
     echo "Invalid platform type. Supported platforms are 'chrome', 'firefox', 'test', and 'prod'"
@@ -22,13 +27,21 @@ echo "Removing old build files..."
 rm -rf build dist
 rm -rf firefox chrome edge release test
 echo "Checking style..."
-if ./node_modules/.bin/prettier --check $STYLEFILES 1> /dev/null ; then
-    true
+if [ -x ./node_modules/.bin/prettier ]; then
+    if ./node_modules/.bin/prettier --check $STYLEFILES 1> /dev/null ; then
+        true
+    else
+        ./node_modules/.bin/prettier --check $STYLEFILES --write
+    fi
 else
-    ./node_modules/.bin/prettier --check $STYLEFILES --write
+    echo -e "\e[7m\033[33mWarning: prettier not found; skipping style check\033[0m"
 fi
 
-./node_modules/.bin/eslint . --ext .js,.ts
+if [ -x ./node_modules/.bin/eslint ]; then
+    ./node_modules/.bin/eslint . --ext .js,.ts
+else
+    echo -e "\e[7m\033[33mWarning: eslint not found; skipping lint\033[0m"
+fi
 
 if ! [[ $CREDS =~ $CREDREGEX ]] ; then
     if [[ $PLATFORM = "prod" ]]; then

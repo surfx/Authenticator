@@ -2,7 +2,7 @@
   <div>
     <a-file-input
       button-type="file"
-      accept="application/json, text/plain"
+      accept="application/json, text/plain, text/csv, .csv"
       v-if="!getFilePassphrase"
       @change="importFile($event, true)"
       :label="i18n.import_backup_file"
@@ -28,6 +28,7 @@ import {
 } from "../../importHelpers";
 import { EntryStorage } from "../../models/storage";
 import { Encryption } from "../../models/encryption";
+import { parseAccounts } from "../../models/csv";
 
 export default Vue.extend({
   data: function () {
@@ -59,19 +60,41 @@ export default Vue.extend({
           } = {};
           let failedCount = 0;
           let succeededCount = 0;
+          const textResult = reader.result as string;
           try {
-            importData = JSON.parse(reader.result as string);
+            importData = JSON.parse(textResult);
             succeededCount = Object.keys(importData).filter(
               (key) => ["key", "enc", "hash"].indexOf(key) === -1
             ).length;
           } catch (e) {
             console.warn(e);
-            const result = await getEntryDataFromOTPAuthPerLine(
-              reader.result as string
-            );
-            importData = result.exportData;
-            failedCount = result.failedCount;
-            succeededCount = result.succeededCount;
+            const accounts = parseAccounts(textResult);
+            if (accounts.length) {
+              importData = {};
+              for (const account of accounts) {
+                const hash = crypto.randomUUID();
+                importData[hash] = ({
+                  hash,
+                  type: account.type || "totp",
+                  encrypted: false,
+                  index: 0,
+                  counter: account.counter,
+                  pinned: false,
+                  issuer: account.issuer,
+                  account: account.account,
+                  secret: account.secret,
+                  period: account.period,
+                  digits: account.digits,
+                  algorithm: account.algorithm,
+                } as unknown) as RawOTPStorage;
+              }
+              succeededCount = accounts.length;
+            } else {
+              const result = await getEntryDataFromOTPAuthPerLine(textResult);
+              importData = result.exportData;
+              failedCount = result.failedCount;
+              succeededCount = result.succeededCount;
+            }
           }
 
           let key: { enc: string } | null = null;
